@@ -1,0 +1,58 @@
+Protocol Design - Simplified FTP
+CPSC 471, Spring 2026
+
+=== Control Channel ===
+The control channel is established when the client connects to the server.
+It remains open for the entire FTP session and is used to send commands
+and receive status responses.
+
+Client -> Server messages:
+- get <filename> <dataport>
+- put <filename> <dataport>
+- ls <dataport>
+- quit
+
+Server -> Client responses:
+- SUCCESS
+- FAILURE
+
+=== Data Channel ===
+The data channel is established and torn down for every file transfer.
+When the client wants to transfer data (ls, get, or put), it generates
+an ephemeral port and waits for the server to connect to it on that port.
+
+Steps:
+1. Client creates a socket and binds to port 0 (OS assigns ephemeral port)
+2. Client includes that port number in the command sent over control channel
+3. Server connects to client on that ephemeral port
+4. Data is transferred
+5. Data channel is closed after transfer is complete
+
+=== Data Transfer Format ===
+To ensure the receiver knows how much data to expect:
+- First 10 bytes = file size (left-justified, space padded)
+- Remaining bytes = actual file/data content
+
+Both sender and receiver loop until all bytes are sent/received to
+handle the partial send/recv behavior of TCP sockets.
+
+=== Command Flow Examples ===
+
+ls:
+  Client -> Server (control): "ls 54321"
+  Server -> Client (data):    file size header + directory listing
+  Server -> Client (control): "SUCCESS" or "FAILURE"
+
+get:
+  Client -> Server (control): "get file.txt 54321"
+  Server -> Client (data):    file size header + file data
+  Server -> Client (control): "SUCCESS" or "FAILURE"
+
+put:
+  Client -> Server (control): "put file.txt 54321"
+  Client -> Server (data):    file size header + file data
+  Server -> Client (control): "SUCCESS" or "FAILURE"
+
+quit:
+  Client -> Server (control): "quit"
+  Server closes connection.
