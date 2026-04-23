@@ -2,16 +2,20 @@ import socket
 import sys
 
 def main():
+    #step 1: validate command arguments
     if len(sys.argv) != 3:
         print("Usage: python cli.py <server> <port>")
         sys.exit(1)
     
+    #step 2: read server info from the command line
     serverName = sys.argv[1]
     serverPort = int(sys.argv[2])
     
+    #step 3: open the control connection to the server
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverName, serverPort))
     
+    #step 4: keep acepting user commands until quit
     while True:
         command = input("ftp> ")
         
@@ -22,8 +26,10 @@ def main():
         cmd = parts[0]
         
         if cmd == 'get':
+            # GET command
             filename = parts[1]
             
+            # open a temporary data socket and telling what server which port to use
             dataSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             dataSocket.bind(('', 0))
             dataPort = dataSocket.getsockname()[1]
@@ -48,13 +54,16 @@ def main():
             with open(filename, 'wb') as f:
                 f.write(fileData)
             
+            # read and print final server status
             status = clientSocket.recv(1024).decode()
             print(status)
             print(f"{filename}: {fileSize} bytes transferred")
 
         elif cmd == 'put':
+            # PUT command
             filename = parts[1]
             
+            # read file contents from disk first
             with open(filename, 'rb') as f:
                 fileData = f.read()
             
@@ -65,8 +74,10 @@ def main():
             
             clientSocket.send(f"put {filename} {dataPort}".encode())
             
+            # accept incoming data connection from server
             dataConn, _ = dataSocket.accept()
             
+            # send fixedwidth file size header then stream bytes
             fileSize = len(fileData)
             dataConn.send(f"{fileSize:<10}".encode())
             
@@ -77,11 +88,13 @@ def main():
             dataConn.close()
             dataSocket.close()
             
+            # read and print final server status
             status = clientSocket.recv(1024).decode()
             print(status)
             print(f"{filename}: {fileSize} bytes transferred")
 
         elif cmd == 'ls':
+            #ls
             dataSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             dataSocket.bind(('', 0))
             dataPort = dataSocket.getsockname()[1]
@@ -89,10 +102,12 @@ def main():
             
             clientSocket.send(f"ls {dataPort}".encode())
             
+            # accept incoming data connection from server
             dataConn, _ = dataSocket.accept()
             
             fileSize = int(dataConn.recv(10).decode().strip())
             
+            # receive directory listing bytes
             data = b""
             while len(data) != fileSize:
                 chunk = dataConn.recv(4096)
@@ -100,6 +115,7 @@ def main():
                     break
                 data += chunk
             
+            # close data connection and print listing
             dataConn.close()
             dataSocket.close()
             

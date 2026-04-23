@@ -8,14 +8,17 @@ def main():
         print("Usage: python serv.py <port>")
         sys.exit(1)
     
+    # get port from command line
     port = int(sys.argv[1])
     
+    # make the main server socket
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind(('', port))
     serverSocket.listen(1)
     
     print(f"Server listening on port {port}")
     
+    #keep waiting for clients forever
     while True:
         connSocket, addr = serverSocket.accept()
         print(f"Client connected from {addr}")
@@ -26,19 +29,23 @@ def main():
             if not command:
                 break
                 
+            # split command text into parts
             parts = command.split()
             cmd = parts[0]
             
             if cmd == 'get':
+                # client wants to download a file
                 filename = parts[1]
                 dataPort = int(parts[2])
                 
                 if not os.path.exists(filename):
                     connSocket.send("FAILURE".encode())
                 else:
+                    #read
                     with open(filename, 'rb') as f:
                         fileData = f.read()
                     
+                    # connect to client's data port
                     dataSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     dataSocket.connect((addr[0], dataPort))
                     
@@ -53,14 +60,17 @@ def main():
                     connSocket.send("SUCCESS".encode())
 
             elif cmd == 'put':
+                # client wants to upload a file
                 filename = parts[1]
                 dataPort = int(parts[2])
                 
+                # connect to client data port
                 dataSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 dataSocket.connect((addr[0], dataPort))
                 
                 fileSize = int(dataSocket.recv(10).decode().strip())
                 
+                # read file bytes until full size
                 fileData = b""
                 while len(fileData) != fileSize:
                     chunk = dataSocket.recv(4096)
@@ -68,6 +78,7 @@ def main():
                         break
                     fileData += chunk
                 
+                # close data socket
                 dataSocket.close()
                 
                 with open(filename, 'wb') as f:
@@ -84,6 +95,7 @@ def main():
                 dataSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 dataSocket.connect((addr[0], dataPort))
                 
+                # send output size first
                 fileSize = len(lsOutput)
                 dataSocket.send(f"{fileSize:<10}".encode())
                 
@@ -95,6 +107,7 @@ def main():
                 connSocket.send("SUCCESS".encode())
 
             elif cmd == 'quit':
+                # close this connection
                 print("Client disconnected")
                 connSocket.close()
                 break
