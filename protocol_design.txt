@@ -17,15 +17,15 @@ server -> client responses:
 
 Data Channel:
 The data channel is established and torn down for every file transfer.
-When the client wants to transfer data (ls, get, or put), it generates
+When the client wants to transfer data, it generates
 an ephemeral port and waits for the server to connect to it on that port.
 
-Steps:
-  1. Client creates a socket and binds to port 0 (OS assigns ephemeral port)
-  2. Client includes that port number in the command sent over control channel
-  3. Server connects to client on that ephemeral port
-  4. Data is transferred
-  5. Data channel is closed after transfer is complete
+steps:
+  1. client creates a socket and binds to port 0
+  2. client includes that port number in the command sent over control channel
+  3. server connects to client on that ephemeral port
+  4. data is transferred
+  5. data channel is closed after transfer is complete
 
 Data Transfer Format:
 To ensure the receiver knows how much data to expect:
