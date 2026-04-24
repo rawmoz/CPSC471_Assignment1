@@ -1,17 +1,17 @@
 CPSC 471, Spring 2026
 
-=== Control Channel ===
+control Channel:
 The control channel is established when the client connects to the server.
 It remains open for the entire FTP session and is used to send commands
 and receive status responses.
 
-Client -> Server messages:
+client -> server messages:
   get <filename> <dataport>
   put <filename> <dataport>
   ls <dataport>
   quit
 
-Server -> Client responses:
+server -> client responses:
 - SUCCESS
 - FAILURE
 
@@ -29,10 +29,10 @@ Steps:
 
 Data Transfer Format:
 To ensure the receiver knows how much data to expect:
-* First 10 bytes = file size (left-justified, space padded)
-* Remaining bytes = actual file/data content
+-First 10 bytes = file size (left-justified, space padded)
+-Remaining bytes = actual file/data content
 
-Both sender and receiver loop until all bytes are sent/received to
+both sender and receiver loop until all bytes are sent and received to
 handle the partial send/recv behavior of TCP sockets.
 
 Command Flow Examples:
